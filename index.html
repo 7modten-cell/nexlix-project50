@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05060a">
+  <meta name="description" content="NEXLIX - منصة رياضية وترفيهية لمتابعة المباريات والقنوات والأفلام.">
+  <title>NEXLIX | WATCH MORE • LIVE MORE</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { sans: ['Cairo', 'sans-serif'] },
+        colors: { ink:'#05060a', panel:'#0b0d13', card:'#090a10', nav:'#101117', red:'#e50914', cyan:'#16c5de', mint:'#16b981' }
+      }}
+    };
+  </script>
+  <style>
+    :root { color-scheme: dark; --red:#e50914; --cyan:#16c5de; --safe-bottom:env(safe-area-inset-bottom,0px); }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scrollbar-width:none; }
+    body { margin:0; background:#05060a; color:#fff; font-family:'Cairo',sans-serif; overflow-x:hidden; padding-bottom:calc(88px + var(--safe-bottom)); }
+    ::-webkit-scrollbar { display:none; }
+    button,input { font:inherit; }
+    button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid #16c5de; outline-offset:3px; }
+    .ticker { height:58px; position:fixed; inset:0 0 auto; z-index:60; background:#e50914; overflow:hidden; display:flex; align-items:center; }
+    .ticker-track { display:flex; width:max-content; white-space:nowrap; animation: ticker 24s linear infinite; }
+    .ticker:hover .ticker-track { animation-play-state:paused; }
+    .ticker-group { display:flex; align-items:center; gap:3rem; padding-inline:1.5rem; font-size:clamp(16px,3.6vw,23px); font-weight:800; }
+    @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(50%); } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; } }
+    .brand-mark { width:72px; height:64px; flex:none; filter:drop-shadow(0 5px 9px #0009); }
+    .brand-word { font-family:Arial,sans-serif; font-weight:900; letter-spacing:1px; font-size:clamp(37px,9vw,57px); line-height:1; }
+    .brand-arc { width:78%; height:20px; border-top:5px solid #e50914; border-radius:100% 100% 0 0; transform:rotate(-5deg); margin:0 4% -3px auto; }
+    .hero { background:radial-gradient(ellipse at 50% 0%,#30090d 0%,#100609 34%,#05060a 72%); }
+    .hero-copy { color:#c7c7cc; font-size:clamp(17px,4.2vw,21px); line-height:1.9; }
+    .btn-red { background:linear-gradient(110deg,#f20b17,#c9000b); box-shadow:0 7px 22px #e5091444,inset 0 1px 0 #ffffff45; }
+    .btn-cyan { background:#16c5de; color:#041116; box-shadow:0 6px 20px #16c5de33; }
+    .ad-space { min-height:86px; background-color:#fff; background-image:repeating-linear-gradient(45deg,transparent,transparent 13px,#d6eeee 13px,#d6eeee 15px); color:#1264a4; }
+    .ad-space span { background:#ffffffdf; }
+    .section-heading { background:linear-gradient(110deg,#171922,#090a10); border:1px solid #242630; }
+    .match-card { background:#08090f; border:2px solid #20222c; border-radius:15px; box-shadow:0 5px 18px #0004; }
+    .match-grid { display:grid; grid-template-columns:1fr 1.2fr 1fr; align-items:center; direction:ltr; gap:4px; }
+    .team { min-width:0; direction:rtl; }
+    .team-name { font-size:clamp(11px,3vw,15px); font-weight:700; line-height:1.5; }
+    .crest { width:49px; height:49px; display:grid; place-items:center; margin:0 auto 7px; border-radius:15px 15px 19px 19px; border:2px solid #4a4d5a; background:linear-gradient(145deg,#202433,#090a10); color:#f4f4f5; font:900 14px Arial,sans-serif; clip-path:polygon(8% 0,92% 0,88% 72%,50% 100%,12% 72%); }
+    .crest.red { background:linear-gradient(145deg,#a50b19,#28080e); border-color:#e15b64; }
+    .crest.blue { background:linear-gradient(145deg,#174b8c,#07182c); border-color:#6395cb; }
+    .crest.gold { background:linear-gradient(145deg,#9a6814,#261a08); border-color:#c9a34c; }
+    .crest.green { background:linear-gradient(145deg,#146448,#071b16); border-color:#4caa87; }
+    .match-center { direction:rtl; text-align:center; min-width:0; }
+    .status { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:112px; max-width:100%; padding:5px 9px; border:1px solid #282b37; border-radius:12px; background:#151721; font-size:11px; font-weight:800; white-space:nowrap; }
+    .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+    .live-dot { background:#e50914; animation:pulse 1.2s infinite; }
+    @keyframes pulse { 50% { opacity:.35; transform:scale(.8); } }
+    .bottom-nav { position:fixed; inset:auto 0 0; z-index:55; background:linear-gradient(180deg,#161820,#090a0f); border-top:1px solid #292b34; padding-bottom:var(--safe-bottom); box-shadow:0 -8px 24px #0008; }
+    .nav-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); max-width:570px; margin:auto; min-height:76px; align-items:end; }
+    .nav-item { color:#b7bbc6; min-width:0; min-height:65px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:10px; font-weight:700; background:none; border:0; }
+    .nav-item i { font-size:23px; }
+    .nav-item.active { color:#16a9e8; }
+    .nav-home { width:61px; height:61px; border-radius:50%; border:4px solid #b8e9ff; background:linear-gradient(145deg,#20a8ed,#0870c3); color:white; margin-top:-25px; box-shadow:0 0 18px #168fe477; font-size:27px; }
+    .page { max-width:570px; margin:0 auto; min-height:70vh; padding-top:58px; }
+    .page-pad { padding:16px; }
+    .surface { background:#0b0d13; border:1px solid #252833; border-radius:16px; }
+    .light-panel { background:#f3f4f6; color:#171923; }
+    .search { width:100%; background:#fff; color:#171923; border:1px solid #d1d5db; border-radius:999px; padding:11px 42px 11px 15px; }
+    .tile { background:#11141d; border:1px solid #282b36; border-radius:14px; min-height:112px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:12px; }
+    .tile i { font-size:30px; color:#16c5de; }
+    .movie-poster { aspect-ratio:2/3; width:100%; border-radius:10px; background:linear-gradient(145deg,#33394b,#10131c 55%,#6b1722); display:grid; place-items:center; color:#ffffffb0; font-size:34px; }
+    .muted { color:#a6a6ae; }
+    .hidden-page { display:none!important; }
+    .toast { position:fixed; z-index:100; bottom:calc(100px + var(--safe-bottom)); left:50%; transform:translateX(-50%); background:#20232e; color:white; border:1px solid #444957; border-radius:12px; padding:10px 16px; font-size:13px; box-shadow:0 8px 24px #0008; }
+    @media (min-width:600px) { .page { border-inline:1px solid #161922; } .ticker-group { font-size:22px; } }
+  </style>
+</head>
+<body>
+  <div class="ticker" aria-label="شريط الأخبار">
+    <div class="ticker-track" id="tickerTrack">
+      <div class="ticker-group"><span>مرحباً بكم في NEXLIX</span><span>WATCH MORE • LIVE MORE</span><span>تابعوا أحدث المباريات والأخبار الرياضية</span></div>
+      <div class="ticker-group" aria-hidden="true"><span>مرحباً بكم في NEXLIX</span><span>WATCH MORE • LIVE MORE</span><span>تابعوا أحدث المباريات والأخبار الرياضية</span></div>
+    </div>
+  </div>
+
+  <main id="app" class="page" aria-live="polite"></main>
+
+  <nav class="bottom-nav" aria-label="التنقل الرئيسي">
+    <div class="nav-grid">
+      <button class="nav-item" data-page="matches"><i class="fa-solid fa-futbol"></i><span>المباريات</span></button>
+      <button class="nav-item" data-page="movies"><i class="fa-solid fa-clapperboard"></i><span>أفلام</span></button>
+      <button class="nav-item" data-page="home" aria-label="الرئيسية"><span class="nav-home flex items-center justify-center"><i class="fa-solid fa-house"></i></span><span>الرئيسية</span></button>
+      <button class="nav-item" data-page="channels"><i class="fa-solid fa-tv"></i><span>قنوات</span></button>
+      <button class="nav-item" data-page="menu"><i class="fa-solid fa-arrow-right-arrow-left"></i><span>القائمة</span></button>
+      <button class="nav-item" data-action="top"><span class="w-8 h-8 rounded-full bg-sky-950 border border-sky-700 flex items-center justify-center text-sky-400"><i class="fa-solid fa-angles-up"></i></span><span class="text-sky-400">صعود</span></button>
+    </div>
+  </nav>
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script>
+    // المباريات الحقيقية تُحمّل من TheSportsDB v1 (الخطة المجانية).
+    let matches = [];
+    let selectedLeague = 'all';
+    let selectedFilter = 'all';
+    let lastUpdated = null;
+    let loadingMatches = false;
+    const API_BASE = 'https://www.thesportsdb.com/api/v1/json/123';
+    const LEAGUES = [
+      {key:'egypt', name:'مصر', league:'الدوري المصري الممتاز', id:'4829'},
+      {key:'england', name:'إنجلترا', league:'الدوري الإنجليزي الممتاز', id:'4328'},
+      {key:'spain', name:'إسبانيا', league:'الدوري الإسباني', id:'4335'},
+      {key:'saudi', name:'السعودية', league:'دوري روشن السعودي', id:'4668'},
+      {key:'europe', name:'أوروبا', league:'دوري أبطال أوروبا', id:'4480'},
+      {key:'europe', name:'أوروبا', league:'الدوري الأوروبي', id:'4481'},
+      {key:'italy', name:'إيطاليا', league:'الدوري الإيطالي', id:'4332'}
+    ];
+    const CACHE_KEY = 'nexlix_matches_v2';
+    const CACHE_TTL = 10 * 60 * 1000;
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const cairoDate = date => new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+    function normalizeEvent(e, league) {
+      const date = e.dateEvent || '';
+      const time = e.strTime || '';
+      const kickoff = date && time ? new Date(`${date}T${time}Z`) : null;
+      const homeScore = e.intHomeScore;
+      const awayScore = e.intAwayScore;
+      const hasScore = homeScore !== null && homeScore !== undefined && awayScore !== null && awayScore !== undefined;
+      const eventStatus = String(e.strStatus || '').toLowerCase();
+      let status = 'upcoming';
+      if (/finished|match finished|ft|after extra time|penalty shootout/.test(eventStatus)) status='finished';
+      else if (/live|in progress|half time|1st half|2nd half|extra time/.test(eventStatus)) status='live';
+      else if (kickoff && kickoff.getTime() <= Date.now() && !/postponed|cancelled|canceled/.test(eventStatus)) status = hasScore ? 'live' : 'upcoming';
+      else if (kickoff && kickoff.getTime()-Date.now() < 60*60*1000) status='soon';
+      if (/postponed|cancelled|canceled/.test(eventStatus)) status='upcoming';
+      const fmt = kickoff ? new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'}).format(kickoff) : (time || 'موعد غير محدد');
+      return {id:String(e.idEvent),home:e.strHomeTeam||'الفريق الأول',away:e.strAwayTeam||'الفريق الثاني',homeCode:(e.strHomeTeam||'').slice(0,3),awayCode:(e.strAwayTeam||'').slice(0,3),homeColor:'blue',awayColor:'red',score:hasScore?`${homeScore} - ${awayScore}`:fmt,status,league:league.league,date:date||'غير محدد',time:fmt,venue:e.strVenue||'غير متاح',eventStatus:e.strStatus||'',leagueKey:league.key,raw:e};
+    }
+    // The free day-schedule endpoint is used to collect every returned event
+    // for the selected competitions across a rolling 14-day window.
+    const SCHEDULE_DAYS = 14;
+    const AUTO_REFRESH_MS = 15 * 60 * 1000;
+    function dateOffsetISO(offset) {
+      const d = new Date();
+      d.setUTCHours(12,0,0,0);
+      d.setUTCDate(d.getUTCDate()+offset);
+      return d.toISOString().slice(0,10);
+    }
+    const delay = ms => new Promise(resolve=>setTimeout(resolve,ms));
+    async function fetchDay(date) {
+      const url = `${API_BASE}/eventsday.php?d=${encodeURIComponent(date)}&s=Soccer`;
+      const response = await fetch(url,{headers:{Accept:'application/json'}});
+      if(!response.ok) throw new Error(`HTTP ${response.status} for ${date}`);
+      const data = await response.json();
+      return (data.events||[]).map(event=>{
+        const league=LEAGUES.find(item=>String(item.id)===String(event.idLeague));
+        return league ? normalizeEvent(event,league) : null;
+      }).filter(Boolean);
+    }
+    async function loadMatches(force=false) {
+      if(loadingMatches) return;
+      const cached = (()=>{try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(_){return null}})();
+      if(!force && cached && Date.now()-cached.savedAt<CACHE_TTL && Array.isArray(cached.items)) {
+        matches=cached.items; lastUpdated=new Date(cached.savedAt); refreshMatchViews(); return;
+      }
+      loadingMatches=true; refreshMatchViews();
+      try {
+        const collected=[];
+        let successfulDays=0;
+        const errors=[];
+        // One date per request avoids relying on the limited next-league feed.
+        // Sequential requests keep traffic gentle for the public free API key.
+        for(let day=0;day<SCHEDULE_DAYS;day++) {
+          const date=dateOffsetISO(day);
+          try {
+            collected.push(...await fetchDay(date));
+            successfulDays++;
+          } catch(error) {
+            console.warn('Schedule day failed:',date,error);
+            errors.push(date);
+          }
+          if(day<SCHEDULE_DAYS-1) await delay(250);
+        }
+        if(!successfulDays) throw new Error('No schedule days could be loaded');
+        const dedup=[...new Map(collected.map(match=>[match.id,match])).values()];
+        matches=dedup.sort((a,b)=>{
+          const da=a.raw?.strTimestamp ? Number(a.raw.strTimestamp)*1000 : new Date(`${a.date}T00:00:00Z`).getTime();
+          const db=b.raw?.strTimestamp ? Number(b.raw.strTimestamp)*1000 : new Date(`${b.date}T00:00:00Z`).getTime();
+          return da-db;
+        });
+        lastUpdated=new Date();
+        localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:Date.now(),items:matches,successfulDays,windowDays:SCHEDULE_DAYS}));
+        if(errors.length) toast(`تم تحميل البيانات، لكن تعذر جلب ${errors.length} من الأيام.`);
+      } catch(error) {
+        console.error('TheSportsDB:',error);
+        if(cached && Array.isArray(cached.items)){matches=cached.items;lastUpdated=new Date(cached.savedAt);toast('تعذر التحديث؛ نعرض آخر بيانات محفوظة.');}
+        else {matches=[];toast('تعذر جلب جدول المباريات. تحقق من الإنترنت وحاول مجدداً.');}
+      } finally {loadingMatches=false;refreshMatchViews();}
+    }
+    function visibleMatches(){return matches.filter(m=>(selectedLeague==='all'||m.leagueKey===selectedLeague)&&(selectedFilter==='all'||(selectedFilter==='upcoming'?['upcoming','soon'].includes(m.status):m.status===selectedFilter)));}
+    function refreshMatchViews(){
+      const list=document.getElementById('match-list'); if(list) list.innerHTML=matchesMarkup();
+      const home=document.getElementById('home-match-list'); if(home) home.innerHTML=matches.slice(0,5).map(matchCard).join('')||emptyMatches();
+      const meta=document.querySelectorAll('[data-match-meta]'); meta.forEach(el=>el.textContent=loadingMatches?'جارٍ التحديث…':lastUpdated?`آخر تحديث ${new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',hour:'2-digit',minute:'2-digit'}).format(lastUpdated)} • تحديث تلقائي كل 15 دقيقة • عرض 14 يوماً`:'بيانات المباريات من TheSportsDB');
+    }
+    function emptyMatches(){return `<div class="surface p-5 text-center text-sm muted">${loadingMatches?'جارٍ تحميل جدول المباريات…':'لا توجد مباريات متاحة حالياً لهذه البطولات.'}</div>`;}
+    function matchesMarkup(){const list=visibleMatches();return list.length?list.map(matchCard).join(''):emptyMatches();}
+    function leagueButtons(){return `<div class="flex gap-2 overflow-x-auto pb-3 mb-3">${[{key:'all',name:'الكل'},...LEAGUES.filter((x,i,a)=>a.findIndex(y=>y.key===x.key)===i).map(x=>({key:x.key,name:x.name}))].map(l=>`<button class="league-btn shrink-0 rounded-full px-4 py-2 text-sm ${selectedLeague===l.key?'bg-cyan-500 text-black font-bold':'bg-gray-800'}" data-league="${l.key}">${l.name}</button>`).join('')}</div>`;}
+    const channels = [
+      {name:'الجزيرة',icon:'fa-globe',color:'#e9b949',category:'أخبار'},
+      {name:'القاهرة نيوز',icon:'fa-newspaper',color:'#e5484d',category:'أخبار'},
+      {name:'قناة رياضية',icon:'fa-futbol',color:'#16c5de',category:'رياضة'},
+      {name:'قناة وثائقية',icon:'fa-earth-africa',color:'#22c55e',category:'وثائقيات'},
+      {name:'قناة أطفال',icon:'fa-child',color:'#f59e0b',category:'أطفال'},
+      {name:'قناة ترفيه',icon:'fa-tv',color:'#a78bfa',category:'ترفيه'}
+    ];
+    const movies = [
+      {name:'عنوان فيلم تجريبي 1',year:'2026',genre:'أكشن'},
+      {name:'عنوان فيلم تجريبي 2',year:'2025',genre:'دراما'},
+      {name:'عنوان فيلم تجريبي 3',year:'2024',genre:'خيال علمي'},
+      {name:'عنوان فيلم تجريبي 4',year:'2026',genre:'مغامرة'},
+      {name:'عنوان فيلم تجريبي 5',year:'2025',genre:'كوميديا'},
+      {name:'عنوان فيلم تجريبي 6',year:'2024',genre:'إثارة'}
+    ];
+    const app = document.getElementById('app');
+    let currentPage = 'home';
+    let previousPage = 'home';
+
+    function logo() {
+      return `<div class="flex flex-col items-center py-5">
+        <div class="brand-arc"></div>
+        <div class="flex items-center justify-center gap-2" dir="ltr">
+          <svg class="brand-mark" viewBox="0 0 100 82" role="img" aria-label="N">
+            <defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff4650"/><stop offset=".55" stop-color="#e50914"/><stop offset="1" stop-color="#97000a"/></linearGradient></defs>
+            <path d="M12 68 L25 13 Q28 3 37 11 L82 57 L73 75 L30 36 L23 72 Q20 82 10 78 Q5 76 12 68Z" fill="url(#ng)"/>
+            <path d="M57 9 L79 20 L82 68 Q82 78 72 76 L60 70Z" fill="url(#ng)"/>
+            <path d="M28 38 L46 55 L37 59Z" fill="#fff" opacity=".95"/>
+          </svg>
+          <div class="brand-word"><span class="text-white">NEX</span><span class="text-red-600">LIX</span></div>
+        </div>
+        <div class="text-gray-300 tracking-[.22em] text-[10px] sm:text-xs mt-2" dir="ltr">WATCH MORE • LIVE MORE</div>
+      </div>`;
+    }
+    function adSpace() {
+      return `<div class="ad-space mx-3 my-5 rounded-sm flex items-center justify-center text-center"><span class="text-2xl sm:text-3xl font-bold px-3 py-1 rounded">(مساحة إعلانية)</span></div>`;
+    }
+    function statusMarkup(status) {
+      const map={live:['مباشر','#e50914','live-dot'],soon:['بعد قليل','#16b981',''],upcoming:['قادمة','#4b8bd8',''],finished:['انتهت','#a6a6ae','']};
+      const [label,color,dot]=map[status]||map.upcoming;
+      return `<span class="status" style="color:${color}">${dot?`<i class="dot ${dot}"></i>`:`<i class="dot" style="background:${color}"></i>`}${label}</span>`;
+    }
+    function matchCard(m) {
+      return `<button class="match-card w-full p-3 text-white text-center" data-match="${esc(m.id)}" aria-label="تفاصيل مباراة ${esc(m.home)} ضد ${esc(m.away)}">
+        <div class="match-grid"><div class="team"><div class="crest ${m.homeColor}">${esc(m.homeCode)}</div><div class="team-name">${esc(m.home)}</div></div>
+        <div class="match-center"><div class="text-xl sm:text-2xl font-black tracking-widest mb-1">${esc(m.score)}</div>${statusMarkup(m.status)}<div class="text-xs sm:text-sm text-teal-400 font-bold mt-2">${esc(m.league)}</div><div class="text-[10px] muted mt-1">${esc(m.time||m.date)}</div></div>
+        <div class="team"><div class="crest ${m.awayColor}">${esc(m.awayCode)}</div><div class="team-name">${esc(m.away)}</div></div></div></button>`;
+    }
+    function homePage() {
+      return `<section class="hero text-center px-3 pb-2">
+        ${logo()}
+        <p class="hero-copy px-3 mb-5">تابع جداول المباريات وأهم البطولات، واستمتع بأقسام NEXLIX الترفيهية على أجهزتك.</p>
+        <div class="flex justify-center items-center gap-3 pb-5">
+          <button class="btn-red rounded-full px-6 py-3 font-extrabold text-base sm:text-lg flex items-center gap-3" data-page="matches"><i class="fa-solid fa-play"></i> مشاهدة الآن</button>
+          <button class="btn-cyan rounded-full px-4 py-3 font-extrabold text-sm flex items-center gap-2" data-page="menu">اشترك الآن <i class="fa-solid fa-caret-left"></i></button>
+        </div>
+      </section>
+      ${adSpace()}
+      <section class="px-3 pb-5">
+        <div class="text-center text-sm text-gray-400 mb-3">بتوقيت القاهرة</div>
+        <div class="section-heading rounded-xl py-4 px-3 text-center text-xl font-bold mb-4">جدول المباريات <span class="block text-[10px] text-cyan-300 font-semibold mt-1" data-match-meta>بيانات من TheSportsDB</span></div>
+        <div id="home-match-list" class="space-y-3">${matches.slice(0,5).map(matchCard).join('')||emptyMatches()}</div>
+        <button class="w-full mt-4 py-3 rounded-xl border border-gray-700 text-cyan-300 font-bold" data-page="matches">عرض كل المباريات <i class="fa-solid fa-arrow-left mr-1"></i></button>
+      </section>`;
+    }
+    function matchesPage() {
+      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><div><h1 class="text-2xl font-extrabold">المباريات</h1><p class="text-xs text-cyan-300 mt-1" data-match-meta>جدول من TheSportsDB</p></div><button id="refresh-matches" class="rounded-xl bg-gray-800 px-3 py-2 text-cyan-300 text-sm" ${loadingMatches?'disabled':''}><i class="fa-solid fa-rotate ${loadingMatches?'fa-spin':''}"></i> تحديث</button></div>
+        ${leagueButtons()}
+        <div class="grid grid-cols-2 gap-2 mb-4"><button class="filter-btn rounded-xl py-2 ${selectedFilter==='all'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="all">الكل</button><button class="filter-btn rounded-xl py-2 ${selectedFilter==='live'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="live">مباشر</button><button class="filter-btn rounded-xl py-2 ${selectedFilter==='upcoming'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="upcoming">قادمة</button><button class="filter-btn rounded-xl py-2 ${selectedFilter==='finished'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="finished">منتهية</button></div>
+        <div id="match-list" class="space-y-3">${matchesMarkup()}</div><p class="text-[10px] muted text-center mt-4">المصدر: TheSportsDB • جميع المباريات التي يعيدها المصدر للبطولات المختارة خلال 14 يوماً • تحديث مجاني كل 15 دقيقة؛ النتائج المباشرة غير مضمونة.</p></div>`;
+    }
+    function channelsPage() {
+      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">القنوات</h1><span class="text-xs muted">دليل قنوات تجريبي</span></div>
+        <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass absolute right-4 top-4 text-gray-500"></i><input id="channel-search" class="search" placeholder="ابحث عن قناة..." aria-label="البحث عن قناة"></div>
+        <div class="flex gap-2 overflow-x-auto pb-3 mb-2">${['الكل','أخبار','رياضة','ترفيه','أطفال','وثائقيات'].map(c=>`<button class="category-btn shrink-0 rounded-full px-4 py-2 bg-gray-800 text-sm" data-category="${c}">${c}</button>`).join('')}</div>
+        <div id="channel-grid" class="grid grid-cols-3 gap-3">${channelTiles(channels)}</div>
+        <p class="text-xs muted text-center mt-5">هذا الدليل لا يتضمن روابط بث. تُضاف المصادر المصرح بها عند توفرها.</p></div>`;
+    }
+    function channelTiles(list) {
+      return list.length ? list.map((c,i)=>`<button class="tile" data-channel="${i}"><i class="fa-solid ${c.icon}" style="color:${c.color}"></i><span class="text-sm font-bold">${c.name}</span><span class="text-[10px] muted">${c.category}</span></button>`).join('') : `<p class="col-span-3 text-center muted py-8">لا توجد قنوات مطابقة للبحث.</p>`;
+    }
+    function moviesPage() {
+      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">الأفلام</h1><span class="text-xs muted">عناوين تجريبية</span></div>
+        <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass absolute right-4 top-4 text-gray-500"></i><input id="movie-search" class="search" placeholder="ابحث عن فيلم..." aria-label="البحث عن فيلم"></div>
+        <div id="movie-grid" class="grid grid-cols-3 gap-3">${movieTiles(movies)}</div>
+        <p class="text-xs muted text-center mt-5">ملصقات وعناوين تجريبية. لا توجد روابط مشاهدة مضافة.</p></div>`;
+    }
+    function movieTiles(list) {
+      return list.length ? list.map((m,i)=>`<button class="text-right min-w-0" data-movie="${i}"><div class="movie-poster"><i class="fa-solid fa-film"></i></div><div class="text-xs font-bold mt-2 leading-5">${m.name}</div><div class="text-[10px] muted">${m.year} • ${m.genre}</div></button>`).join('') : `<p class="col-span-3 text-center muted py-8">لا توجد نتائج.</p>`;
+    }
+    function menuPage() {
+      return `<div class="page-pad">${logo()}<div class="surface p-4 mb-4 text-center"><h1 class="text-2xl font-extrabold mb-2">القائمة</h1><p class="muted text-sm">كل ما تحتاجه للوصول إلى أقسام NEXLIX.</p></div>
+        <div class="space-y-2">
+          ${[['matches','المباريات','fa-futbol'],['movies','الأفلام','fa-film'],['channels','القنوات','fa-tv']].map(x=>`<button class="surface w-full p-4 flex items-center gap-3 text-right" data-page="${x[0]}"><i class="fa-solid ${x[2]} text-cyan-400 w-7 text-xl"></i><span class="font-bold">${x[1]}</span><i class="fa-solid fa-chevron-left mr-auto muted"></i></button>`).join('')}
+          <a class="surface w-full p-4 flex items-center gap-3" href="mailto:contact@nexlix.example"><i class="fa-regular fa-envelope text-cyan-400 w-7 text-xl"></i><span class="font-bold">تواصل معنا</span><i class="fa-solid fa-chevron-left mr-auto muted"></i></a>
+        </div><p class="text-center text-xs muted mt-6">NEXLIX • WATCH MORE • LIVE MORE</p></div>`;
+    }
+    function detailsPage(id) {
+      const m=matches.find(x=>x.id===String(id)); if(!m) return `<div class="page-pad">${emptyMatches()}</div>`;
+      return `<div class="page-pad"><button class="text-cyan-300 mb-5" data-back><i class="fa-solid fa-arrow-right ml-2"></i>رجوع</button><h1 class="text-xl font-extrabold text-center mb-5">تفاصيل المباراة</h1><div class="surface p-4"><div class="match-grid"><div class="team text-center"><div class="crest ${m.homeColor}">${esc(m.homeCode)}</div><b class="text-sm">${esc(m.home)}</b></div><div class="match-center"><div class="text-2xl font-black">${esc(m.score)}</div>${statusMarkup(m.status)}</div><div class="team text-center"><div class="crest ${m.awayColor}">${esc(m.awayCode)}</div><b class="text-sm">${esc(m.away)}</b></div></div><div class="border-t border-gray-800 mt-5">${[['البطولة',m.league],['التاريخ',m.date],['الموعد بتوقيت القاهرة',m.time],['الملعب',m.venue],['حالة المباراة',m.eventStatus||'لم تبدأ']].map(r=>`<div class="flex justify-between gap-3 py-3 border-b border-gray-800 text-sm"><span class="muted">${r[0]}</span><b>${esc(r[1])}</b></div>`).join('')}</div><p class="text-[10px] muted mt-4">المعلومات مقدمة من TheSportsDB وقد تختلف حسب تحديث المصدر.</p></div></div>`;
+    }
+    function livePage() {
+      return `<div class="page-pad"><button class="text-cyan-300 mb-5" data-back><i class="fa-solid fa-arrow-right ml-2"></i>رجوع</button><h1 class="text-2xl font-extrabold mb-4">مشغل البث</h1>
+        <div class="aspect-video rounded-2xl border border-gray-700 bg-black flex flex-col items-center justify-center text-center p-5"><i class="fa-solid fa-circle-play text-5xl text-gray-500 mb-3"></i><b>لا يتوفر مصدر بث حالياً</b><span class="text-xs muted mt-2">أضف رابط HLS أو مصدر فيديو تملك حق استخدامه لتفعيل المشغل.</span></div>
+        <button class="w-full rounded-xl bg-cyan-500 text-black font-extrabold py-3 mt-4" data-share><i class="fa-solid fa-share-nodes ml-2"></i>مشاركة الصفحة</button></div>`;
+    }
+    function render(page, options={}) {
+      if (!options.detail) { previousPage = currentPage; currentPage = page; }
+      const pages = {home:homePage,matches:matchesPage,channels:channelsPage,movies:moviesPage,menu:menuPage,live:livePage};
+      app.innerHTML = options.detail ? detailsPage(options.id) : (pages[page] || homePage)();
+      document.querySelectorAll('.nav-item[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===currentPage));
+      window.scrollTo({top:0,behavior:'smooth'});
+      history.replaceState({page:currentPage},'', page==='home'?'#home':'#'+page);
+    }
+    function toast(message) {
+      const el=document.getElementById('toast'); el.textContent=message; el.classList.remove('hidden');
+      clearTimeout(toast.timer); toast.timer=setTimeout(()=>el.classList.add('hidden'),2600);
+    }
+    document.addEventListener('click', async e=>{
+      const pageBtn=e.target.closest('[data-page]');
+      if(pageBtn){ render(pageBtn.dataset.page); return; }
+      if(e.target.closest('[data-action="top"]')){ window.scrollTo({top:0,behavior:'smooth'}); return; }
+      const matchBtn=e.target.closest('[data-match]');
+      if(matchBtn){ previousPage=currentPage; render(currentPage,{detail:true,id:matchBtn.dataset.match}); return; }
+      const refresh=e.target.closest('#refresh-matches');
+      if(refresh){loadMatches(true);return;}
+      const leagueBtn=e.target.closest('[data-league]');
+      if(leagueBtn){selectedLeague=leagueBtn.dataset.league;render('matches');return;}
+      const filter=e.target.closest('[data-filter]');
+      if(filter){selectedFilter=filter.dataset.filter;render('matches');return;}
+      const cat=e.target.closest('[data-category]');
+      if(cat){
+        document.querySelectorAll('.category-btn').forEach(b=>b.className='category-btn shrink-0 rounded-full px-4 py-2 bg-gray-800 text-sm');
+        cat.className='category-btn shrink-0 rounded-full px-4 py-2 bg-cyan-600 text-black text-sm font-bold';
+        const category=cat.dataset.category, q=(document.getElementById('channel-search')?.value||'').trim();
+        const list=channels.filter(c=>(category==='الكل'||c.category===category)&&c.name.includes(q));
+        document.getElementById('channel-grid').innerHTML=channelTiles(list); return;
+      }
+      if(e.target.closest('[data-channel]')){ const c=channels[Number(e.target.closest('[data-channel]').dataset.channel)]; toast(`تفاصيل ${c.name}: لا يوجد مصدر بث مضاف حالياً.`); return; }
+      if(e.target.closest('[data-movie]')){ const m=movies[Number(e.target.closest('[data-movie]').dataset.movie)]; toast(`${m.name} — بيانات تجريبية، لا يوجد رابط مشاهدة.`); return; }
+      if(e.target.closest('[data-back]')){ render(previousPage); return; }
+      if(e.target.closest('[data-share]')){
+        if(navigator.share){ try{await navigator.share({title:'NEXLIX',url:location.href});}catch(_){} }
+        else if(navigator.clipboard){ await navigator.clipboard.writeText(location.href); toast('تم نسخ رابط الصفحة.'); }
+        else toast('يمكنك نسخ رابط الصفحة من شريط العنوان.'); return;
+      }
+    });
+    document.addEventListener('input',e=>{
+      if(e.target.id==='channel-search'){
+        const q=e.target.value.trim().toLowerCase();
+        document.getElementById('channel-grid').innerHTML=channelTiles(channels.filter(c=>c.name.toLowerCase().includes(q)));
+      }
+      if(e.target.id==='movie-search'){
+        const q=e.target.value.trim().toLowerCase();
+        document.getElementById('movie-grid').innerHTML=movieTiles(movies.filter(m=>m.name.toLowerCase().includes(q)));
+      }
+    });
+    window.addEventListener('popstate',()=>render((location.hash||'#home').slice(1)));
+    render('home');
+    loadMatches();
+    setInterval(()=>loadMatches(true),AUTO_REFRESH_MS);
+  </script>
+</body>
+</html>
