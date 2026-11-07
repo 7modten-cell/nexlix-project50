@@ -229,105 +229,16 @@
           toast('تعذر التحديث؛ نعرض بيانات اليوم المحفوظة.');
         } else {
           matches = [];
-          toast('تعذر جلب مباريات اليوم. تحقق من الإنترنت وحاول مجدداً.');
+          lastUpdated = new Date();
+          refreshMatchViews();
+          toast('تعذر تحديث المباريات.');
         }
-
       } finally {
         loadingMatches = false;
         refreshMatchViews();
       }
     }
-    function visibleMatches(){return matches.filter(m=>(selectedLeague==='all'||m.leagueKey===selectedLeague)&&(selectedFilter==='all'||(selectedFilter==='upcoming'?['upcoming','soon'].includes(m.status):m.status===selectedFilter)));}
-    function refreshMatchViews(){
-      const list=document.getElementById('match-list'); if(list) list.innerHTML=matchesMarkup();
-      const home=document.getElementById('home-match-list'); if(home) home.innerHTML=matches.slice(0,5).map(matchCard).join('')||emptyMatches();
-      const meta=document.querySelectorAll('[data-match-meta]'); meta.forEach(el=>el.textContent=loadingMatches?'جارٍ التحديث…':lastUpdated?`آخر تحديث ${new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',hour:'2-digit',minute:'2-digit'}).format(lastUpdated)} • تحديث تلقائي كل 15 دقيقة • مباريات اليوم فقط`:'بيانات المباريات من TheSportsDB');
-    }
-    function emptyMatches(){return `<div class="surface p-5 text-center text-sm muted">${loadingMatches?'جارٍ تحميل جدول المباريات…':'لا توجد مباريات متاحة حالياً لهذه البطولات.'}</div>`;}
-    function matchesMarkup(){const list=visibleMatches();return list.length?list.map(matchCard).join(''):emptyMatches();}
-    function leagueButtons(){return `<div class="flex gap-2 overflow-x-auto pb-3 mb-3">${[{key:'all',name:'الكل'},...LEAGUES.filter((x,i,a)=>a.findIndex(y=>y.key===x.key)===i).map(x=>({key:x.key,name:x.name}))].map(l=>`<button class="league-btn shrink-0 rounded-full px-4 py-2 text-sm ${selectedLeague===l.key?'bg-cyan-500 text-black font-bold':'bg-gray-800'}" data-league="${l.key}">${l.name}</button>`).join('')}</div>`;}
-    const channels = [
-      {name:'الجزيرة',icon:'fa-globe',color:'#e9b949',category:'أخبار'},
-      {name:'القاهرة نيوز',icon:'fa-newspaper',color:'#e5484d',category:'أخبار'},
-      {name:'قناة رياضية',icon:'fa-futbol',color:'#16c5de',category:'رياضة'},
-      {name:'قناة وثائقية',icon:'fa-earth-africa',color:'#22c55e',category:'وثائقيات'},
-      {name:'قناة أطفال',icon:'fa-child',color:'#f59e0b',category:'أطفال'},
-      {name:'قناة ترفيه',icon:'fa-tv',color:'#a78bfa',category:'ترفيه'}
-    ];
-    const movies = [
-      {name:'عنوان فيلم تجريبي 1',year:'2026',genre:'أكشن'},
-      {name:'عنوان فيلم تجريبي 2',year:'2025',genre:'دراما'},
-      {name:'عنوان فيلم تجريبي 3',year:'2024',genre:'خيال علمي'},
-      {name:'عنوان فيلم تجريبي 4',year:'2026',genre:'مغامرة'},
-      {name:'عنوان فيلم تجريبي 5',year:'2025',genre:'كوميديا'},
-      {name:'عنوان فيلم تجريبي 6',year:'2024',genre:'إثارة'}
-    ];
-    const app = document.getElementById('app');
-    let currentPage = 'home';
-    let previousPage = 'home';
 
-    function logo() {
-      return `<div class="flex flex-col items-center py-5">
-        <div class="brand-arc"></div>
-        <div class="flex items-center justify-center gap-2" dir="ltr">
-          <svg class="brand-mark" viewBox="0 0 100 82" role="img" aria-label="N">
-            <defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff4650"/><stop offset=".55" stop-color="#e50914"/><stop offset="1" stop-color="#97000a"/></linearGradient></defs>
-            <path d="M12 68 L25 13 Q28 3 37 11 L82 57 L73 75 L30 36 L23 72 Q20 82 10 78 Q5 76 12 68Z" fill="url(#ng)"/>
-            <path d="M57 9 L79 20 L82 68 Q82 78 72 76 L60 70Z" fill="url(#ng)"/>
-            <path d="M28 38 L46 55 L37 59Z" fill="#fff" opacity=".95"/>
-          </svg>
-          <div class="brand-word"><span class="text-white">NEX</span><span class="text-red-600">LIX</span></div>
-        </div>
-        <div class="text-gray-300 tracking-[.22em] text-[10px] sm:text-xs mt-2" dir="ltr">WATCH MORE • LIVE MORE</div>
-      </div>`;
-    }
-    function adSpace() {
-      return `<div class="ad-space mx-3 my-5 rounded-sm flex items-center justify-center text-center"><span class="text-2xl sm:text-3xl font-bold px-3 py-1 rounded">(مساحة إعلانية)</span></div>`;
-    }
-    function statusMarkup(status) {
-      const map={live:['مباشر','#e50914','live-dot'],soon:['بعد قليل','#16b981',''],upcoming:['قادمة','#4b8bd8',''],finished:['انتهت','#a6a6ae','']};
-      const [label,color,dot]=map[status]||map.upcoming;
-      return `<span class="status" style="color:${color}">${dot?`<i class="dot ${dot}"></i>`:`<i class="dot" style="background:${color}"></i>`}${label}</span>`;
-    }
-    function matchCard(m) {
-      return `<button class="match-card w-full p-3 text-white text-center" data-match="${esc(m.id)}" aria-label="تفاصيل مباراة ${esc(m.home)} ضد ${esc(m.away)}">
-        <div class="match-grid"><div class="team"><div class="crest ${m.homeColor}">${esc(m.homeCode)}</div><div class="team-name">${esc(m.home)}</div></div>
-        <div class="match-center"><div class="text-xl sm:text-2xl font-black tracking-widest mb-1">${esc(m.score)}</div>${statusMarkup(m.status)}<div class="text-xs sm:text-sm text-teal-400 font-bold mt-2">${esc(m.league)}</div><div class="text-[10px] muted mt-1">${esc(m.time||m.date)}</div></div>
-        <div class="team"><div class="crest ${m.awayColor}">${esc(m.awayCode)}</div><div class="team-name">${esc(m.away)}</div></div></div></button>`;
-    }
-    function homePage() {
-      return `<section class="hero text-center px-3 pb-2">
-        ${logo()}
-        <p class="hero-copy px-3 mb-5">تابع جداول المباريات وأهم البطولات، واستمتع بأقسام NEXLIX الترفيهية على أجهزتك.</p>
-        <div class="flex justify-center items-center gap-3 pb-5">
-          <button class="btn-red rounded-full px-6 py-3 font-extrabold text-base sm:text-lg flex items-center gap-3" data-page="matches"><i class="fa-solid fa-play"></i> مشاهدة الآن</button>
-          <button class="btn-cyan rounded-full px-4 py-3 font-extrabold text-sm flex items-center gap-2" data-page="menu">اشترك الآن <i class="fa-solid fa-caret-left"></i></button>
-        </div>
-      </section>
-      ${adSpace()}
-      <section class="px-3 pb-5">
-        <div class="text-center text-sm text-gray-400 mb-3">بتوقيت القاهرة</div>
-        <div class="section-heading rounded-xl py-4 px-3 text-center text-xl font-bold mb-4">جدول المباريات <span class="block text-[10px] text-cyan-300 font-semibold mt-1" data-match-meta>بيانات من TheSportsDB</span></div>
-        <div id="home-match-list" class="space-y-3">${matches.slice(0,5).map(matchCard).join('')||emptyMatches()}</div>
-        <button class="w-full mt-4 py-3 rounded-xl border border-gray-700 text-cyan-300 font-bold" data-page="matches">عرض كل المباريات <i class="fa-solid fa-arrow-left mr-1"></i></button>
-      </section>`;
-    }
-    function matchesPage() {
-      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><div><h1 class="text-2xl font-extrabold">المباريات</h1><p class="text-xs text-cyan-300 mt-1" data-match-meta>جدول من TheSportsDB</p></div><button id="refresh-matches" class="rounded-xl bg-gray-800 px-3 py-2 text-cyan-300 text-sm" ${loadingMatches?'disabled':''}><i class="fa-solid fa-rotate ${loadingMatches?'fa-spin':''}"></i> تحديث</button></div>
-        ${leagueButtons()}
-        <div class="grid grid-cols-2 gap-2 mb-4"><button class="filter-btn rounded-xl py-2 ${selectedFilter==='all'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="all">الكل</button><button class="filter-btn rounded-xl py-2 ${selectedFilter==='live'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="live">مباشر</button><button class="filter-btn rounded-xl py-2 ${selectedFilter==='upcoming'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="upcoming">قادمة</button><button class="filter-btn rounded-xl py-2 ${selectedFilter==='finished'?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="finished">منتهية</button></div>
-        <div id="match-list" class="space-y-3">${matchesMarkup()}</div><p class="text-[10px] muted text-center mt-4">المصدر: TheSportsDB • جميع المباريات التي يعيدها المصدر للبطولات المختارة خلال 14 يوماً • تحديث مجاني كل 15 دقيقة؛ النتائج المباشرة غير مضمونة.</p></div>`;
-    }
-    function channelsPage() {
-      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">القنوات</h1><span class="text-xs muted">دليل قنوات تجريبي</span></div>
-        <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass absolute right-4 top-4 text-gray-500"></i><input id="channel-search" class="search" placeholder="ابحث عن قناة..." aria-label="البحث عن قناة"></div>
-        <div class="flex gap-2 overflow-x-auto pb-3 mb-2">${['الكل','أخبار','رياضة','ترفيه','أطفال','وثائقيات'].map(c=>`<button class="category-btn shrink-0 rounded-full px-4 py-2 bg-gray-800 text-sm" data-category="${c}">${c}</button>`).join('')}</div>
-        <div id="channel-grid" class="grid grid-cols-3 gap-3">${channelTiles(channels)}</div>
-        <p class="text-xs muted text-center mt-5">هذا الدليل لا يتضمن روابط بث. تُضاف المصادر المصرح بها عند توفرها.</p></div>`;
-    }
-    function channelTiles(list) {
-      return list.length ? list.map((c,i)=>`<button class="tile" data-channel="${i}"><i class="fa-solid ${c.icon}" style="color:${c.color}"></i><span class="text-sm font-bold">${c.name}</span><span class="text-[10px] muted">${c.category}</span></button>`).join('') : `<p class="col-span-3 text-center muted py-8">لا توجد قنوات مطابقة للبحث.</p>`;
-    }
     function moviesPage() {
       return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">الأفلام</h1><span class="text-xs muted">عناوين تجريبية</span></div>
         <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass absolute right-4 top-4 text-gray-500"></i><input id="movie-search" class="search" placeholder="ابحث عن فيلم..." aria-label="البحث عن فيلم"></div>
