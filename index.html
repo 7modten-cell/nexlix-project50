@@ -117,7 +117,7 @@
       {key:'europe', name:'أوروبا', league:'الدوري الأوروبي', id:'4481'},
       {key:'italy', name:'إيطاليا', league:'الدوري الإيطالي', id:'4332'}
     ];
-    const CACHE_KEY = 'nexlix_matches_v2';
+    const CACHE_KEY = 'nexlix_matches_today_v3';
     const CACHE_TTL = 10 * 60 * 1000;
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const cairoDate = date => new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
@@ -138,72 +138,110 @@
       const fmt = kickoff ? new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'}).format(kickoff) : (time || 'موعد غير محدد');
       return {id:String(e.idEvent),home:e.strHomeTeam||'الفريق الأول',away:e.strAwayTeam||'الفريق الثاني',homeCode:(e.strHomeTeam||'').slice(0,3),awayCode:(e.strAwayTeam||'').slice(0,3),homeColor:'blue',awayColor:'red',score:hasScore?`${homeScore} - ${awayScore}`:fmt,status,league:league.league,date:date||'غير محدد',time:fmt,venue:e.strVenue||'غير متاح',eventStatus:e.strStatus||'',leagueKey:league.key,raw:e};
     }
-    // The free day-schedule endpoint is used to collect every returned event
-    // for the selected competitions across a rolling 14-day window.
-    const SCHEDULE_DAYS = 14;
+    // جلب مباريات اليوم فقط حسب توقيت القاهرة.
     const AUTO_REFRESH_MS = 15 * 60 * 1000;
-    function dateOffsetISO(offset) {
-      const d = new Date();
-      d.setUTCHours(12,0,0,0);
-      d.setUTCDate(d.getUTCDate()+offset);
-      return d.toISOString().slice(0,10);
-    }
-    const delay = ms => new Promise(resolve=>setTimeout(resolve,ms));
+
     async function fetchDay(date) {
       const url = `${API_BASE}/eventsday.php?d=${encodeURIComponent(date)}&s=Soccer`;
-      const response = await fetch(url,{headers:{Accept:'application/json'}});
-      if(!response.ok) throw new Error(`HTTP ${response.status} for ${date}`);
+      const response = await fetch(url, {
+        headers: {Accept: 'application/json'}
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for ${date}`);
+      }
+
       const data = await response.json();
-      return (data.events||[]).map(event=>{
-        const league=LEAGUES.find(item=>String(item.id)===String(event.idLeague));
-        return league ? normalizeEvent(event,league) : null;
+
+      return (data.events || []).filter(event =>
+        event.dateEvent === date
+      ).map(event => {
+        const league = LEAGUES.find(
+          item => String(item.id) === String(event.idLeague)
+        );
+        return league ? normalizeEvent(event, league) : null;
       }).filter(Boolean);
     }
-    async function loadMatches(force=false) {
-      if(loadingMatches) return;
-      const cached = (()=>{try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null')}catch(_){return null}})();
-      if(!force && cached && Date.now()-cached.savedAt<CACHE_TTL && Array.isArray(cached.items)) {
-        matches=cached.items; lastUpdated=new Date(cached.savedAt); refreshMatchViews(); return;
-      }
-      loadingMatches=true; refreshMatchViews();
-      try {
-        const collected=[];
-        let successfulDays=0;
-        const errors=[];
-        // One date per request avoids relying on the limited next-league feed.
-        // Sequential requests keep traffic gentle for the public free API key.
-        for(let day=0;day<SCHEDULE_DAYS;day++) {
-          const date=dateOffsetISO(day);
-          try {
-            collected.push(...await fetchDay(date));
-            successfulDays++;
-          } catch(error) {
-            console.warn('Schedule day failed:',date,error);
-            errors.push(date);
-          }
-          if(day<SCHEDULE_DAYS-1) await delay(250);
+
+    async function loadMatches(force = false) {
+      if (loadingMatches) return;
+
+      const today = cairoDate(new Date());
+
+      const cached = (() => {
+        try {
+          return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        } catch (_) {
+          return null;
         }
-        if(!successfulDays) throw new Error('No schedule days could be loaded');
-        const dedup=[...new Map(collected.map(match=>[match.id,match])).values()];
-        matches=dedup.sort((a,b)=>{
-          const da=a.raw?.strTimestamp ? Number(a.raw.strTimestamp)*1000 : new Date(`${a.date}T00:00:00Z`).getTime();
-          const db=b.raw?.strTimestamp ? Number(b.raw.strTimestamp)*1000 : new Date(`${b.date}T00:00:00Z`).getTime();
-          return da-db;
+      })();
+
+      if (
+        !force &&
+        cached &&
+        cached.date === today &&
+        Date.now() - cached.savedAt < CACHE_TTL &&
+        Array.isArray(cached.items)
+      ) {
+        matches = cached.items;
+        lastUpdated = new Date(cached.savedAt);
+        refreshMatchViews();
+        return;
+      }
+
+      loadingMatches = true;
+      refreshMatchViews();
+
+      try {
+        // طلب واحد فقط لجلب مباريات تاريخ اليوم.
+        matches = await fetchDay(today);
+
+        matches.sort((a, b) => {
+          const da = a.raw?.strTimestamp
+            ? Number(a.raw.strTimestamp) * 1000
+            : new Date(`${a.date}T00:00:00Z`).getTime();
+
+          const db = b.raw?.strTimestamp
+            ? Number(b.raw.strTimestamp) * 1000
+            : new Date(`${b.date}T00:00:00Z`).getTime();
+
+          return da - db;
         });
-        lastUpdated=new Date();
-        localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:Date.now(),items:matches,successfulDays,windowDays:SCHEDULE_DAYS}));
-        if(errors.length) toast(`تم تحميل البيانات، لكن تعذر جلب ${errors.length} من الأيام.`);
-      } catch(error) {
-        console.error('TheSportsDB:',error);
-        if(cached && Array.isArray(cached.items)){matches=cached.items;lastUpdated=new Date(cached.savedAt);toast('تعذر التحديث؛ نعرض آخر بيانات محفوظة.');}
-        else {matches=[];toast('تعذر جلب جدول المباريات. تحقق من الإنترنت وحاول مجدداً.');}
-      } finally {loadingMatches=false;refreshMatchViews();}
+
+        lastUpdated = new Date();
+
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          date: today,
+          savedAt: Date.now(),
+          items: matches
+        }));
+
+      } catch (error) {
+        console.error('TheSportsDB:', error);
+
+        if (
+          cached &&
+          cached.date === today &&
+          Array.isArray(cached.items)
+        ) {
+          matches = cached.items;
+          lastUpdated = new Date(cached.savedAt);
+          toast('تعذر التحديث؛ نعرض بيانات اليوم المحفوظة.');
+        } else {
+          matches = [];
+          toast('تعذر جلب مباريات اليوم. تحقق من الإنترنت وحاول مجدداً.');
+        }
+
+      } finally {
+        loadingMatches = false;
+        refreshMatchViews();
+      }
     }
     function visibleMatches(){return matches.filter(m=>(selectedLeague==='all'||m.leagueKey===selectedLeague)&&(selectedFilter==='all'||(selectedFilter==='upcoming'?['upcoming','soon'].includes(m.status):m.status===selectedFilter)));}
     function refreshMatchViews(){
       const list=document.getElementById('match-list'); if(list) list.innerHTML=matchesMarkup();
       const home=document.getElementById('home-match-list'); if(home) home.innerHTML=matches.slice(0,5).map(matchCard).join('')||emptyMatches();
-      const meta=document.querySelectorAll('[data-match-meta]'); meta.forEach(el=>el.textContent=loadingMatches?'جارٍ التحديث…':lastUpdated?`آخر تحديث ${new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',hour:'2-digit',minute:'2-digit'}).format(lastUpdated)} • تحديث تلقائي كل 15 دقيقة • عرض 14 يوماً`:'بيانات المباريات من TheSportsDB');
+      const meta=document.querySelectorAll('[data-match-meta]'); meta.forEach(el=>el.textContent=loadingMatches?'جارٍ التحديث…':lastUpdated?`آخر تحديث ${new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',hour:'2-digit',minute:'2-digit'}).format(lastUpdated)} • تحديث تلقائي كل 15 دقيقة • مباريات اليوم فقط`:'بيانات المباريات من TheSportsDB');
     }
     function emptyMatches(){return `<div class="surface p-5 text-center text-sm muted">${loadingMatches?'جارٍ تحميل جدول المباريات…':'لا توجد مباريات متاحة حالياً لهذه البطولات.'}</div>`;}
     function matchesMarkup(){const list=visibleMatches();return list.length?list.map(matchCard).join(''):emptyMatches();}
