@@ -81,9 +81,6 @@
     .plan-badge { position:absolute; top:-11px; right:50%; transform:translateX(50%); background:#16c5de; color:#04131a; font-size:10px; font-weight:900; padding:3px 10px; border-radius:999px; white-space:nowrap; }
     .plan-price { font-size:28px; font-weight:900; line-height:1.15; color:#fff; }
     .plan-price small { font-size:12px; font-weight:700; color:#a6a6ae; }
-    .field { width:100%; background:#14161f; border:1px solid #2c2f3a; border-radius:10px; padding:10px 12px; color:#fff; font-size:14px; }
-    .field:focus { border-color:#16c5de; outline:none; }
-    .label { display:block; font-size:11px; font-weight:700; color:#9aa0ad; margin-bottom:5px; }
     .modal { position:fixed; inset:0; z-index:90; display:flex; align-items:flex-end; justify-content:center; background:#000b; backdrop-filter:blur(3px); }
     .modal.hidden { display:none; }
     .modal-sheet { width:100%; max-width:470px; background:#0d0f16; border:1px solid #2a2e3c; border-radius:20px 20px 0 0; padding:18px 16px calc(18px + var(--safe-bottom)); max-height:88vh; overflow-y:auto; }
@@ -142,7 +139,8 @@
        الحقول:  time (24 ساعة) • home • away • leagueKey • status
                 score (اختياري مثل "2 - 1") • venue • channel
        status:  upcoming (قادمة) | live (مباشر) | finished (انتهت)
-       يمكنك أيضاً الإضافة والحذف من داخل الموقع (يُحفظ ليوم واحد فقط).
+       التعديل من الكود فقط — لا يوجد أي تعديل متاح للزائر من داخل الموقع
+       (سيتم ربطه بلوحة تحكم لاحقاً).
        ══════════════════════════════════════════════════════════════════ */
     const MANUAL_MATCHES = [
       { time:'18:00', home:'الأهلي',       away:'الزمالك',  leagueKey:'egypt',   status:'upcoming', venue:'استاد القاهرة الدولي', channel:'قناة رياضية' },
@@ -152,11 +150,8 @@
       { time:'22:00', home:'ريال مدريد',   away:'برشلونة',  leagueKey:'spain',   status:'upcoming', venue:'سانتياغو برنابيو', channel:'قناة رياضية' }
     ];
 
-    const DAY_TABLE_KEY = 'nexlix_day_table_v1';
     const STATUS_TEXT = { upcoming:'قادمة', soon:'بعد قليل', live:'مباشر', finished:'انتهت' };
     let matches = [];
-    let selectedLeague = 'all';
-    let selectedFilter = 'all';
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const todayISO = () => new Intl.DateTimeFormat('en-CA',{timeZone:CONFIG.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const todayLabel = () => new Intl.DateTimeFormat('ar-EG',{timeZone:CONFIG.timezone,weekday:'long',day:'numeric',month:'long'}).format(new Date());
@@ -165,21 +160,8 @@
       const short = clean.replace(/^(ال|Al|El)\s*/i,'');
       return (short || clean || '—').slice(0,3);
     };
-    // الجدول المحفوظ يدوياً من داخل الموقع (يُحفظ ليوم واحد فقط ثم يُصفَّر)
-    function loadDayTable(){
-      try {
-        const saved = JSON.parse(localStorage.getItem(DAY_TABLE_KEY)||'null');
-        if (saved && saved.date === todayISO() && Array.isArray(saved.items)) return saved.items;
-      } catch(_) {}
-      return null;
-    }
-    function saveDayTable(items){
-      try { localStorage.setItem(DAY_TABLE_KEY, JSON.stringify({date:todayISO(), items})); return true; }
-      catch(_) { toast('تعذر حفظ الجدول في هذا المتصفح.'); return false; }
-    }
+    // المصدر الوحيد لمباريات اليوم — لا يوجد أي تعديل متاح من داخل الموقع
     function rawToday(){
-      const saved = loadDayTable();
-      if (saved) return saved;
       const today = todayISO();
       return MANUAL_MATCHES
         .filter(m => !m.date || m.date === today)
@@ -213,15 +195,10 @@
     const byKickoff = (a,b) => String(a.time||'99:99').localeCompare(String(b.time||'99:99'));
     function matchesForToday(){ return rawToday().map(buildMatch).sort(byKickoff); }
     function emptyMatches(){
-      return `<div class="surface p-5 text-center text-sm muted leading-7">لا توجد مباريات مُدخلة ليوم <b class="text-white">${esc(todayLabel())}</b>.<br>أضف مباريات اليوم من زر «إضافة مباراة لليوم».</div>`;
-    }
-    function visibleMatches(){
-      return matches.filter(m => (selectedLeague==='all' || m.leagueKey===selectedLeague) &&
-        (selectedFilter==='all' || (selectedFilter==='upcoming' ? ['upcoming','soon'].includes(m.status) : m.status===selectedFilter)));
+      return `<div class="surface p-5 text-center text-sm muted leading-7">لا توجد مباريات ليوم <b class="text-white">${esc(todayLabel())}</b> حتى الآن.</div>`;
     }
     function matchesMarkup(){
-      const list = visibleMatches();
-      return list.length ? list.map(matchCard).join('') : emptyMatches();
+      return matches.length ? matches.map(matchCard).join('') : emptyMatches();
     }
     function refreshMatchViews(){
       matches = matchesForToday();
@@ -230,14 +207,10 @@
       document.querySelectorAll('[data-match-meta]').forEach(el => {
         el.textContent = `مباريات اليوم • ${todayLabel()} • جدول يدوي • بتوقيت القاهرة`;
       });
-      const count = document.getElementById('match-count');
-      if(count) count.textContent = `${matches.length} مباراة`;
-    }
-    function leagueButtons(){
-      const used = [...new Map(matches.map(m => [m.leagueKey, m.league])).entries()];
-      if(selectedLeague !== 'all' && !used.some(([key]) => key === selectedLeague)) selectedLeague = 'all';
-      const chips = [{key:'all', label:'الكل'}, ...used.map(([key,label]) => ({key, label}))];
-      return `<div class="flex gap-2 overflow-x-auto pb-3 mb-3">${chips.map(c => `<button class="league-btn shrink-0 rounded-full px-4 py-2 text-sm ${selectedLeague===c.key?'bg-cyan-500 text-black font-bold':'bg-gray-800'}" data-league="${esc(c.key)}">${esc(c.label)}</button>`).join('')}</div>`;
+      // سطر صفحة المباريات: اسم اليوم + التاريخ + توقيت القاهرة
+      document.querySelectorAll('[data-day-line]').forEach(el => {
+        el.textContent = `${todayLabel()} • بتوقيت القاهرة`;
+      });
     }
 
     const channels = [
@@ -315,58 +288,31 @@
     }
     function matchesPage() {
       return `<div class="page-pad">
-        <div class="flex items-center justify-between gap-2 mb-4">
-          <div><h1 class="text-2xl font-extrabold">مباريات اليوم</h1><p class="text-xs text-cyan-300 mt-1" data-match-meta>جدول يدوي</p></div>
-          <span id="match-count" class="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-cyan-300 font-bold shrink-0">${matches.length} مباراة</span>
-        </div>
-        ${leagueButtons()}
-        <div class="grid grid-cols-4 gap-2 mb-4">${[['all','الكل'],['live','مباشر'],['upcoming','قادمة'],['finished','منتهية']].map(([key,label])=>`<button class="filter-btn rounded-xl py-2 text-xs sm:text-sm ${selectedFilter===key?'bg-red-700 font-bold':'bg-gray-800'}" data-filter="${key}">${label}</button>`).join('')}</div>
-        <div class="surface p-3 mb-4">
-          <div class="flex items-center gap-2">
-            <button id="toggle-editor" class="flex-1 rounded-xl bg-cyan-600 text-black font-extrabold py-2.5 text-sm"><i class="fa-solid fa-plus ml-1"></i> إضافة مباراة لليوم</button>
-            <button id="clear-day" class="rounded-xl bg-gray-800 text-red-300 px-3 py-2.5 text-sm font-bold" aria-label="مسح جدول اليوم"><i class="fa-solid fa-trash"></i></button>
-          </div>
-          <form id="match-form" class="hidden mt-3 space-y-2" novalidate>
-            <div class="grid grid-cols-2 gap-2">
-              <div><label class="label" for="mf-home">الفريق الأول</label><input id="mf-home" class="field" placeholder="مثال: الأهلي" autocomplete="off"></div>
-              <div><label class="label" for="mf-away">الفريق الثاني</label><input id="mf-away" class="field" placeholder="مثال: الزمالك" autocomplete="off"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div><label class="label" for="mf-time">الموعد (توقيت القاهرة)</label><input id="mf-time" class="field" type="time" value="20:00"></div>
-              <div><label class="label" for="mf-status">الحالة</label><select id="mf-status" class="field">${[['upcoming','قادمة'],['live','مباشر'],['finished','انتهت']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div><label class="label" for="mf-league">البطولة</label><select id="mf-league" class="field">${LEAGUES.map(l=>`<option value="${esc(l.key)}">${esc(l.league)}</option>`).join('')}</select></div>
-              <div><label class="label" for="mf-score">النتيجة (اختياري)</label><input id="mf-score" class="field" placeholder="2 - 1" autocomplete="off"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div><label class="label" for="mf-venue">الملعب</label><input id="mf-venue" class="field" placeholder="استاد القاهرة" autocomplete="off"></div>
-              <div><label class="label" for="mf-channel">القناة</label><input id="mf-channel" class="field" placeholder="قناة رياضية" autocomplete="off"></div>
-            </div>
-            <button type="submit" class="w-full rounded-xl bg-mint text-black font-extrabold py-2.5 text-sm">حفظ المباراة في جدول اليوم</button>
-          </form>
-          <p class="text-[10px] muted mt-2 leading-5">الجدول يدوي: تُحفظ الإضافات لهذا اليوم فقط وتُصفَّر تلقائياً مع بداية يوم جديد.</p>
+        <div class="text-center mb-5">
+          <h1 class="text-2xl font-extrabold">مباريات اليوم</h1>
+          <p class="text-xs text-cyan-300 font-semibold mt-2" data-day-line>${esc(todayLabel())} • بتوقيت القاهرة</p>
         </div>
         <div id="match-list" class="space-y-3">${matchesMarkup()}</div>
-        <p class="text-[10px] muted text-center mt-4 leading-5">تُعرض مباريات اليوم فقط — لا مباريات الأمس ولا الغد • التوقيت بتوقيت القاهرة.</p>
+        <p class="text-[10px] muted text-center mt-4 leading-5">مباريات اليوم فقط — لا مباريات الأمس ولا الغد • المشاهدة مجانية للجميع.</p>
       </div>`;
     }
-
     function channelsPage() {
-      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">القنوات</h1><span class="text-xs muted">دليل قنوات تجريبي</span></div>
+      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">القنوات</h1><span class="text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/40 rounded-full px-2.5 py-1">بالاشتراك</span></div>
         <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass absolute right-4 top-4 text-gray-500"></i><input id="channel-search" class="search" placeholder="ابحث عن قناة..." aria-label="البحث عن قناة"></div>
         <div class="flex gap-2 overflow-x-auto pb-3 mb-2">${['الكل','أخبار','رياضة','ترفيه','أطفال','وثائقيات'].map(c=>`<button class="category-btn shrink-0 rounded-full px-4 py-2 bg-gray-800 text-sm" data-category="${c}">${c}</button>`).join('')}</div>
         <div id="channel-grid" class="grid grid-cols-3 gap-3">${channelTiles(channels)}</div>
-        <p class="text-xs muted text-center mt-5">هذا الدليل لا يتضمن روابط بث. تُضاف المصادر المصرح بها عند توفرها.</p></div>`;
+        <button class="w-full mt-4 rounded-xl btn-cyan py-3 font-extrabold text-sm" data-page="subscribe"><i class="fa-solid fa-crown ml-1"></i> اشترك لمشاهدة القنوات</button>
+        <p class="text-xs muted text-center mt-4">هذا الدليل لا يتضمن روابط بث. تُضاف المصادر المصرح بها عند توفرها.</p></div>`;
     }
     function channelTiles(list) {
       return list.length ? list.map((c,i)=>`<button class="tile" data-channel="${i}"><i class="fa-solid ${c.icon}" style="color:${c.color}"></i><span class="text-sm font-bold">${c.name}</span><span class="text-[10px] muted">${c.category}</span></button>`).join('') : `<p class="col-span-3 text-center muted py-8">لا توجد قنوات مطابقة للبحث.</p>`;
     }
     function moviesPage() {
-      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">الأفلام</h1><span class="text-xs muted">عناوين تجريبية</span></div>
+      return `<div class="page-pad"><div class="flex items-center justify-between mb-4"><h1 class="text-2xl font-extrabold">الأفلام</h1><span class="text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/40 rounded-full px-2.5 py-1">بالاشتراك</span></div>
         <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass absolute right-4 top-4 text-gray-500"></i><input id="movie-search" class="search" placeholder="ابحث عن فيلم..." aria-label="البحث عن فيلم"></div>
         <div id="movie-grid" class="grid grid-cols-3 gap-3">${movieTiles(movies)}</div>
-        <p class="text-xs muted text-center mt-5">ملصقات وعناوين تجريبية. لا توجد روابط مشاهدة مضافة.</p></div>`;
+        <button class="w-full mt-4 rounded-xl btn-cyan py-3 font-extrabold text-sm" data-page="subscribe"><i class="fa-solid fa-crown ml-1"></i> اشترك لمشاهدة الأفلام</button>
+        <p class="text-xs muted text-center mt-4">ملصقات وعناوين تجريبية. لا توجد روابط مشاهدة مضافة.</p></div>`;
     }
     function movieTiles(list) {
       return list.length ? list.map((m,i)=>`<button class="text-right min-w-0" data-movie="${i}"><div class="movie-poster"><i class="fa-solid fa-film"></i></div><div class="text-xs font-bold mt-2 leading-5">${m.name}</div><div class="text-[10px] muted">${m.year} • ${m.genre}</div></button>`).join('') : `<p class="col-span-3 text-center muted py-8">لا توجد نتائج.</p>`;
@@ -385,26 +331,27 @@
       return `<div class="page-pad"><button class="text-cyan-300 mb-5" data-back><i class="fa-solid fa-arrow-right ml-2"></i>رجوع</button><h1 class="text-xl font-extrabold text-center mb-5">تفاصيل المباراة</h1>
         <div class="surface p-4"><div class="match-grid"><div class="team text-center"><div class="crest ${m.homeColor}">${esc(m.homeCode)}</div><b class="text-sm">${esc(m.home)}</b></div><div class="match-center"><div class="text-2xl font-black">${esc(m.score)}</div>${statusMarkup(m.status)}</div><div class="team text-center"><div class="crest ${m.awayColor}">${esc(m.awayCode)}</div><b class="text-sm">${esc(m.away)}</b></div></div>
         <div class="border-t border-gray-800 mt-5">${rows.map(r=>`<div class="flex justify-between gap-3 py-3 border-b border-gray-800 text-sm"><span class="muted">${r[0]}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
-        <button class="w-full mt-4 rounded-xl btn-cyan py-3 font-extrabold text-sm" data-page="subscribe"><i class="fa-solid fa-crown ml-1"></i> اشترك لمشاهدة المباراة</button>
-        <button class="w-full mt-2 rounded-xl bg-gray-800 text-red-300 py-2.5 text-sm font-bold" data-del-match="${esc(m.id)}"><i class="fa-solid fa-trash ml-1"></i> حذف من جدول اليوم</button>
-        <p class="text-[10px] muted mt-4">جدول يدوي — تُدار المباريات من صفحة «مباريات اليوم».</p></div></div>`;
+        <div class="mt-4 rounded-xl border border-mint/40 bg-mint/10 py-2.5 text-center text-xs font-bold text-mint"><i class="fa-solid fa-circle-check ml-1"></i> مشاهدة المباريات مجانية للجميع</div>
+        <p class="text-[10px] muted mt-4 text-center">المواعيد بتوقيت القاهرة.</p></div></div>`;
     }
     /* ══════════════════════════════════════════════════════════════════
-       ٢) صفحة الاشتراك — شهري / سنوي / 3 سنوات
+       ٢) صفحة الاشتراك — الأفلام والقنوات (شهري / سنوي / 3 سنوات)
+       المباريات مجانية ولا تحتاج اشتراكاً.
        عدّل الأسعار والمزايا من مصفوفة PLANS بالأسفل.
        ══════════════════════════════════════════════════════════════════ */
     const PLANS = [
       { key:'monthly', name:'شهري', price:99, months:1, period:'شهر', badge:'', tagline:'مرونة كاملة',
-        features:['كل المباريات والقنوات','جودة تصل إلى Full HD','مستخدم واحد','إلغاء في أي وقت'] },
+        features:['كل الأفلام في المكتبة','كل القنوات المباشرة','جودة تصل إلى Full HD','مستخدم واحد','إلغاء في أي وقت'] },
       { key:'yearly', name:'سنوي', price:790, months:12, period:'سنة', badge:'الأكثر اختياراً', tagline:'توفير 33%',
-        features:['كل مزايا الباقة الشهرية','جودة تصل إلى 4K','مستخدم واحد','توفير 33% عن الشهري'] },
+        features:['كل الأفلام والقنوات','جودة تصل إلى 4K','مستخدم واحد','توفير 33% عن الشهري'] },
       { key:'triennial', name:'3 سنوات', price:1690, months:36, period:'3 سنوات', badge:'أفضل قيمة', tagline:'توفير 53%',
-        features:['كل مزايا الباقة السنوية','3 أجهزة في نفس الوقت','دعم ذو أولوية','توفير 53% عن الشهري'] }
+        features:['كل الأفلام والقنوات','جودة تصل إلى 4K','3 أجهزة في نفس الوقت','دعم ذو أولوية','توفير 53% عن الشهري'] }
     ];
     const COMPARE_ROWS = [
       ['السعر شهرياً', p => `≈ ${Math.round(p.price/p.months)} ${CONFIG.currency}`],
       ['المدة', p => p.period],
-      ['كل المباريات والقنوات', () => '✓'],
+      ['كل الأفلام', () => '✓'],
+      ['كل القنوات', () => '✓'],
       ['أقصى جودة', p => p.months >= 12 ? '4K' : 'Full HD'],
       ['الأجهزة في نفس الوقت', p => p.months >= 36 ? '3' : '1'],
       ['دعم ذو أولوية', p => p.months >= 36 ? '✓' : '—']
@@ -422,11 +369,16 @@
     }
     function subscribePage() {
       return `<div class="page-pad">
-        <div class="text-center mb-6">
+        <div class="text-center mb-5">
           <span class="inline-grid place-items-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-400 text-2xl mb-3"><i class="fa-solid fa-crown"></i></span>
-          <h1 class="text-2xl font-extrabold">باقات الاشتراك</h1>
-          <p class="text-xs muted mt-2 leading-6">اختر الباقة المناسبة واستمتع بكل المباريات والقنوات والأفلام على كل أجهزتك.</p>
+          <h1 class="text-2xl font-extrabold">اشتراك الأفلام والقنوات</h1>
+          <p class="text-xs muted mt-2 leading-6">اختر الباقة المناسبة واستمتع بكل الأفلام والقنوات على كل أجهزتك.</p>
         </div>
+        <button class="w-full surface p-3 mb-4 flex items-center gap-3 text-right border-mint/40" data-page="matches">
+          <span class="w-10 h-10 shrink-0 rounded-xl bg-mint/10 border border-mint/40 text-mint grid place-items-center"><i class="fa-solid fa-futbol"></i></span>
+          <span class="min-w-0"><b class="block text-sm">المباريات مجانية للجميع</b><span class="block text-[11px] muted mt-0.5">لا تحتاج اشتراكاً لمتابعة مباريات اليوم</span></span>
+          <i class="fa-solid fa-chevron-left mr-auto text-mint"></i>
+        </button>
         <div class="grid gap-3 sm:grid-cols-3">${PLANS.map(planCard).join('')}</div>
         <div class="surface p-4 mt-5">
           <h2 class="font-extrabold mb-3 text-sm">مقارنة سريعة</h2>
@@ -444,10 +396,10 @@
         </div>
         <div class="surface p-4 mt-4 space-y-3">
           <h2 class="font-extrabold text-sm">أسئلة شائعة</h2>
-          ${[['كيف يتم التفعيل؟','أرسل طلبك عبر واتساب أو البريد، وبعد تأكيد الدفع يصلك كود التفعيل ويُفعَّل حسابك.'],['هل يمكنني تغيير الباقة؟','نعم، يمكنك الترقية أو التمديد في أي وقت ويُحسب المتبقي من اشتراكك.'],['هل توجد فترة تجريبية؟','تواصل معنا لمعرفة العروض المتاحة حالياً.']].map(([q,a])=>`<div class="border-t border-gray-800 pt-3 first-of-type:border-0 first-of-type:pt-0"><b class="block text-[12px] mb-1">${q}</b><p class="text-[11px] muted leading-6">${a}</p></div>`).join('')}
+          ${[['ماذا يشمل الاشتراك؟','كل الأفلام في المكتبة وكل القنوات. المباريات مجانية للجميع ولا تحتاج اشتراكاً.'],['كيف يتم التفعيل؟','أرسل طلبك عبر واتساب أو البريد، وبعد تأكيد الدفع يصلك كود التفعيل ويُفعَّل حسابك.'],['هل يمكنني تغيير الباقة؟','نعم، يمكنك الترقية أو التمديد في أي وقت ويُحسب المتبقي من اشتراكك.']].map(([q,a])=>`<div class="border-t border-gray-800 pt-3 first-of-type:border-0 first-of-type:pt-0"><b class="block text-[12px] mb-1">${q}</b><p class="text-[11px] muted leading-6">${a}</p></div>`).join('')}
         </div>
         <button class="w-full mt-5 rounded-xl bg-gray-800 border border-gray-700 py-3 text-sm font-bold text-cyan-300" data-back><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
-        <p class="text-[10px] muted text-center mt-4 leading-5">الأسعار بالجنيه المصري وقابلة للتغيير • الأسعار تشمل الضرائب.</p>
+        <p class="text-[10px] muted text-center mt-4 leading-5">الاشتراك يشمل الأفلام والقنوات فقط • الأسعار بالجنيه المصري وقابلة للتغيير.</p>
       </div>`;
     }
     function openPlanModal(key) {
@@ -471,7 +423,7 @@
         <ul class="text-[11px] space-y-1.5 mb-4">${plan.features.map(f=>`<li class="flex items-start gap-1.5"><i class="fa-solid fa-circle-check text-mint mt-0.5"></i><span>${esc(f)}</span></li>`).join('')}</ul>
         <a class="w-full rounded-xl bg-mint text-black font-extrabold py-3 text-sm flex items-center justify-center gap-2" href="${wa}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp text-lg"></i> إتمام الطلب عبر واتساب</a>
         <a class="w-full mt-2 rounded-xl bg-gray-800 border border-gray-700 py-2.5 text-sm font-bold flex items-center justify-center gap-2" href="${mail}"><i class="fa-regular fa-envelope"></i> إرسال الطلب بالبريد</a>
-        <p class="text-[10px] muted mt-3 leading-5 text-center">سيتم تأكيد الطلب وإرسال كود التفعيل بعد الدفع. لم يتم خصم أي مبلغ من هذه الصفحة.</p>`;
+        <p class="text-[10px] muted mt-3 leading-5 text-center">الاشتراك يشمل الأفلام والقنوات — المباريات مجانية. سيتم تأكيد الطلب وإرسال كود التفعيل بعد الدفع، ولا يتم خصم أي مبلغ من هذه الصفحة.</p>`;
       const modal = document.getElementById('plan-modal');
       if(modal) modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
@@ -516,27 +468,6 @@
       if(e.target.closest('[data-action="top"]')){ window.scrollTo({top:0,behavior:'smooth'}); return; }
       const matchBtn=e.target.closest('[data-match]');
       if(matchBtn){ previousPage=currentPage; render(currentPage,{detail:true,id:matchBtn.dataset.match}); return; }
-      if(e.target.closest('#toggle-editor')){
-        const form=document.getElementById('match-form');
-        if(form){ form.classList.toggle('hidden'); if(!form.classList.contains('hidden')) document.getElementById('mf-home')?.focus(); }
-        return;
-      }
-      if(e.target.closest('#clear-day')){
-        if(!rawToday().length){ toast('جدول اليوم فارغ بالفعل.'); return; }
-        if(window.confirm('مسح كل مباريات اليوم؟')){ saveDayTable([]); render('matches'); toast('تم مسح جدول اليوم.'); }
-        return;
-      }
-      const delBtn=e.target.closest('[data-del-match]');
-      if(delBtn){
-        const id=String(delBtn.dataset.delMatch);
-        saveDayTable(rawToday().filter(m=>String(m.id)!==id));
-        render('matches'); toast('تم حذف المباراة من جدول اليوم.');
-        return;
-      }
-      const leagueBtn=e.target.closest('[data-league]');
-      if(leagueBtn){selectedLeague=leagueBtn.dataset.league;render('matches');return;}
-      const filter=e.target.closest('[data-filter]');
-      if(filter){selectedFilter=filter.dataset.filter;render('matches');return;}
       const cat=e.target.closest('[data-category]');
       if(cat){
         document.querySelectorAll('.category-btn').forEach(b=>b.className='category-btn shrink-0 rounded-full px-4 py-2 bg-gray-800 text-sm');
@@ -563,29 +494,6 @@
         const q=e.target.value.trim().toLowerCase();
         document.getElementById('movie-grid').innerHTML=movieTiles(movies.filter(m=>m.name.toLowerCase().includes(q)));
       }
-    });
-    document.addEventListener('submit', e=>{
-      if(e.target.id !== 'match-form') return;
-      e.preventDefault();
-      const val = id => (document.getElementById(id)?.value || '').trim();
-      const home = val('mf-home'), away = val('mf-away'), time = val('mf-time');
-      if(!home || !away){ toast('أدخل اسم الفريقين أولاً.'); return; }
-      if(home === away){ toast('لا يمكن أن يكون الفريقان متطابقين.'); return; }
-      if(!time){ toast('أدخل موعد المباراة.'); return; }
-      const list = rawToday().slice();
-      list.push({
-        id: `m-${Date.now()}`,
-        time,
-        home, away,
-        leagueKey: val('mf-league') || 'egypt',
-        status: val('mf-status') || 'upcoming',
-        score: val('mf-score'),
-        venue: val('mf-venue') || 'غير محدد',
-        channel: val('mf-channel') || 'غير محدد'
-      });
-      if(!saveDayTable(list)) return;
-      render('matches');
-      toast('تمت إضافة المباراة إلى جدول اليوم.');
     });
     document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closePlanModal(); });
     window.addEventListener('scroll', updateScrollTop, {passive:true});
